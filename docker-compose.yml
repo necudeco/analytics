@@ -1,0 +1,11 @@
+version: '2'
+
+services:
+  apache:
+    container_name: analytics_apache
+    ports:
+      - 8080:80
+    image: httpd:2.4
+    working_dir: /usr/local/apache2/htdocs
+    volumes:
+      - .:/usr/local/apache2/htdocs/

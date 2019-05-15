@@ -1,0 +1,153 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <title>Hello Analytics Reporting API V4</title>
+
+  <link href="./../css/bootstrap.min.css" rel="stylesheet">
+  <link href="./../css/font-awesome.min.css" rel="stylesheet">
+  <link href="./../css/style.css" rel="stylesheet">
+
+  <script src="https://code.jquery.com/jquery-3.3.1.slim.min.js" integrity="sha384-q8i/X+965DzO0rT7abK41JStQIAqVgRVzpbzo5smXKp4YfRvH+8abtTE1Pi6jizo" crossorigin="anonymous"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.14.7/umd/popper.min.js" integrity="sha384-UO2eT0CpHqdSJQ6hJty5KVphtPhzWj9WO1clHTMGa3JDZwrnQq4sF86dIHNDz0W1" crossorigin="anonymous"></script>
+
+  <script src="./../js/cookie.js"></script>
+  <script src="./../js/bootstrap.min.js"></script>
+</head>
+<body>
+
+    <nav class="navbar navbar-expand-lg navbar-dark bg-dark">
+        <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#navbarNavDropdown" aria-controls="navbarNavDropdown" aria-expanded="false" aria-label="Toggle navigation">
+            <span class="navbar-toggler-icon"></span>
+        </button>
+    
+        <div class="collapse navbar-collapse" id="navbarNavDropdown">
+            <ul class="navbar-nav">
+            <li class="nav-item">
+                <a class="nav-link" href="/">Home</a>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link" href="/dashboard/visitas-dia.html">Dashboard</a>
+            </li>
+            <li class="nav-item active">
+                <a class="nav-link" href="/configuracion/form.html">Configuracion</a>
+            </li>
+            </ul>
+        </div>
+    </nav>
+
+    <div class="container">
+        <div class="row">
+            <div class="col-sm-12 my-md-5">
+                <h1>Configuración para google analytics</h1>
+            </div>
+
+            <div class="col-sm-12">
+                <form>
+                    <div class="col-sm-12">
+                        <div class="row">
+                            <div class="col-sm-12 text-right">
+                                <button type="button" id="addRow" class="btn btn-secondary">Agregar +</button>
+                                <br>
+                            </div>
+                            <div class="col-sm-12">        
+                                    <br>
+                            </div>
+
+                            <div class="col-sm-12">
+                                <table id="table" class="table table-hover">
+                                    <thead class="thead-dark">
+                                        <tr>
+                                            <th>Dominio</th>
+                                            <th>ID de Vista</th>
+                                            <th></th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="tbody">
+                                        
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+
+                        <div class="row">
+                            <div class="col-sm-12">
+                                <small>No guardamos ni tenemos acceso a la información y las respuestas proporcionadas por el API de google analytics.</small>
+                            </div>
+                            <div class="col-sm-12">
+                                <a href="/"  class="btn btn-danger">cancelar</a>
+                                <button type="submit" id="guardar" class="btn btn-success">Guardar</button>
+                            </div>
+                        </div>
+                    </div>
+                </form>
+            </div>
+
+
+        </div>
+    </div>
+
+<script>
+
+    $(document).ready(function(){
+        console.log("FORM");
+        
+
+        var x = getCookie(cookie);
+        if (x) {
+            var config = JSON.parse(x);
+            for (const id in config) {
+                const element = config[id];
+                addRow(element.dominio, id);
+            }
+            //$("#dominio").val(config.dominio);
+            //$("#idvista").val(config.idVista);
+
+            console.log("COKKIE", config);
+        }
+
+        addRow();
+
+        $(document).on('click', '#removeRow', function(e){
+            var tr = $($(this).parent('td').get(0)).parent('tr').remove();
+        })
+
+    });
+
+    $("#guardar").on('click', function(e){
+        var config = {};
+        $('#table').find("tbody tr").map(function(){
+            var row = $(this).get(0);
+            var dominio = $(row).find("td input#dominio").val();
+            var idVista = $(row).find("td input#idvista").val();
+            
+            if(idVista && dominio){
+                if(!config[idVista]) config[idVista] = {};
+                config[idVista]['dominio'] = dominio;
+            }
+        });
+        setCookie(cookie,JSON.stringify(config),7);
+    })
+
+    
+
+    $("#addRow").on('click', function(e){
+        addRow();
+    })
+
+    
+    function addRow(dominio, idvista){
+        if(!dominio) dominio = '';
+        if(!idvista) idvista = '';
+        let tr = `<tr>
+                    <td><input type="text" class="form-control" id="dominio" placeholder="Dominio (http://www.dominio.com)" value=${dominio}></td>
+                    <td><input type="text" class="form-control" id="idvista" placeholder="ID de vista" value=${idvista}></td>
+                    <td class="text-center"><button type="button" id="removeRow" class="btn btn-danger"><i class="fa fa-trash-o"></i></button></td>
+                </tr>`;
+
+        $('#tbody').append(tr);//AGREGA AL FINAL
+        //$('#tbody').prepend(tr);//AGREGA AL INICIO
+    }
+</script>
+</body>
+</html>

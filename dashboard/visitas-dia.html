@@ -1,0 +1,303 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <title>Hello Analytics Reporting API V4</title>
+  <meta name="google-signin-client_id" content="129507005485-n4jsse2eo4vn353d1h0o641f6608c25q.apps.googleusercontent.com">
+  <meta name="google-signin-scope" content="https://www.googleapis.com/auth/analytics.readonly">
+
+  <link href="./../css/bootstrap.min.css" rel="stylesheet">
+  <link href="./../css/font-awesome.min.css" rel="stylesheet">
+  <link href="./../css/bootstrap-datetimepicker.min.css" rel="stylesheet">
+  <link href="./../css/style.css" rel="stylesheet">
+  
+
+  <script src="https://code.jquery.com/jquery-3.3.1.slim.min.js" integrity="sha384-q8i/X+965DzO0rT7abK41JStQIAqVgRVzpbzo5smXKp4YfRvH+8abtTE1Pi6jizo" crossorigin="anonymous"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.14.7/umd/popper.min.js" integrity="sha384-UO2eT0CpHqdSJQ6hJty5KVphtPhzWj9WO1clHTMGa3JDZwrnQq4sF86dIHNDz0W1" crossorigin="anonymous"></script>
+  
+
+  
+  
+  <script src="./../js/cookie.js"></script>
+  <script src="./../js/moment.js"></script>
+  <script src="./../js/bootstrap.min.js"></script>
+  <script src="./../js/bootstrap-datetimepicker.min.js"></script>
+  <script src="./../js/highcharts.js"></script>
+  <script src="./../js/exporting.js"></script>
+  <script src="./../js/export-data.js"></script>
+</head>
+<body>
+
+  <nav class="navbar navbar-expand-lg navbar-dark bg-dark">
+    <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#navbarNavDropdown" aria-controls="navbarNavDropdown" aria-expanded="false" aria-label="Toggle navigation">
+      <span class="navbar-toggler-icon"></span>
+    </button>
+
+    <div class="collapse navbar-collapse" id="navbarNavDropdown">
+      <ul class="navbar-nav">
+        <li class="nav-item">
+          <a class="nav-link" href="/">Home</a>
+        </li>
+        <li class="nav-item active">
+          <a class="nav-link" href="/dashboard/visitas-dia.html">Dashboard</a>
+        </li>
+        <li class="nav-item">
+          <a class="nav-link" href="/configuracion/form.html">Configuracion</a>
+        </li>
+      </ul>
+    </div>
+  </nav>
+
+  <div class="container">
+    <div class="row">
+        <div class="col-sm-12 my-md-5">
+          <h1>Días más frecuentados por los usuarios</h1>
+        </div>
+
+        <div class="col-sm-4">
+            <p class="g-signin2" data-onsuccess="query"></p>
+        </div>
+
+        <div class="col-sm-3">
+          <div class="input-group mb-3">
+            <div class="input-group-prepend">
+              <span class="input-group-text">Desde:</span>
+            </div>
+            <input type="text" class="form-control dateInicio" placeholder="inicio de fecha">
+            <div class="input-group-append">
+              <span class="input-group-text" >
+                <i class="fa fa-calendar-o"></i>
+              </span>
+            </div>
+          </div>
+        </div>
+
+        <div class="col-sm-3">
+          <div class="input-group mb-3">
+            <div class="input-group-prepend">
+              <span class="input-group-text">Hasta:</span>
+            </div>
+            <input type="text" class="form-control dateFin" placeholder="fin de fecha">
+            <div class="input-group-append">
+              <span class="input-group-text" >
+                <i class="fa fa-calendar-o"></i>
+              </span>
+            </div>
+          </div>
+        </div>
+
+        <div class="col-sm-2 text-center">
+          <button type="button" id="buscar" class="btn btn-secondary"><i class="fa fa-search"></i> Buscar</button>
+        </div>
+        
+
+        <div class="col-sm-12" id="graficoDay"></div>
+    </div>
+  </div>
+
+
+<script>
+
+  
+  $(document).ready(function(){
+    $('input.dateInicio').datetimepicker({
+      defaultDate: moment().subtract(7, 'days').format("YYYY-MM-DD"),
+      format:'YYYY-MM-DD',
+    });
+    $('input.dateFin').datetimepicker({
+      defaultDate: moment().format("YYYY-MM-DD"),
+      format:'YYYY-MM-DD',
+    });
+
+    var x = getCookie(cookie);
+    if (x) {
+      var config = JSON.parse(x);
+      if(!Object.keys(config).length){
+        window.location = '/configuracion/form.html';
+      }
+    }else{
+      window.location = '/configuracion/form.html';
+    }
+  });
+
+  $("#buscar").on('click', function(e){
+    query();
+  })
+
+
+
+  function query(){
+    //queryReports(VIEW_ID, displayResults);
+    
+    var x = getCookie(cookie);
+    if (x) {
+      var config = JSON.parse(x);
+      console.log("CONFIG", config);
+      if(!Object.keys(config).length){
+        window.location = '/configuracion/form.html';
+      }else{
+        viewDay(config);    
+      }
+    }
+
+    
+    
+  }
+
+
+
+  function loadGrafico(categorias, series){
+    console.log("GRAFICO-c", categorias);
+    console.log("GRAFICO-d", series);
+    Highcharts.chart('graficoDay', {
+      chart: {
+          type: 'line'
+      },
+      title: {
+          text: 'Visitas por dia'
+      },
+      subtitle: {
+          text: null
+      },
+      xAxis: {
+          categories: categorias
+      },
+      yAxis: {
+          title: {
+              text: null
+          }
+      },
+      plotOptions: {
+          line: {
+              dataLabels: {
+                  enabled: true
+              },
+              enableMouseTracking: false
+          }
+      },
+      series: series
+    });
+  }
+
+
+  function viewDay(config){
+
+    var promesas = [];
+    for (const id in config) {
+        const element = config[id];
+        promesas.push(new Promise(function(resolve, resject){
+          gapi.client.request({
+            path: '/v4/reports:batchGet',
+            root: 'https://analyticsreporting.googleapis.com/',
+            method: 'POST',
+            body: {
+              reportRequests: [
+                {
+                  viewId: id,
+                  dateRanges: [
+                    {
+                      startDate: $('input.dateInicio').val(),
+                      endDate: $('input.dateFin').val()
+                    }
+                  ],
+                  metrics: [
+                    {
+                      expression: "ga:pageviews"
+                    }
+                  ],
+                  dimensions:
+                  [
+                    {name: "ga:day"}
+                  ]
+                }
+              ]
+            }
+          }).then(function(response){
+            response.result.dominio = element.dominio;
+            resolve(response.result);
+          },function(err){ reject(err) });
+        }))
+        //queryReports(id, element.dominio, displayResults);
+    }
+
+    Promise.all(promesas).then(function(response){
+      console.log("RESPONSE-DAY", response);
+      var objUrl = {};
+      var categorias = [];
+      var series = [];
+      var objDay = {};
+      var tempDay = {};
+      var objDominio = {};
+
+      for(var i = 0; i < response.length; i++){
+        var dominio = response[i].dominio;
+        var reports = response[i].reports[0];
+        var data = reports.data.rows;
+        if(!data) continue;
+
+        for(var j = 0; j < data.length; j++){
+          var element = data[j];
+          if(element.data) continue;
+          var day = element.dimensions[0];//DIA
+          var value = element.metrics[0].values[0];//VISITAS
+          if(!tempDay[day]){
+            tempDay[day] = day;
+            categorias.push(day);
+          }
+          
+          
+          if(!objDominio[dominio]) objDominio[dominio] = {};
+          objDominio[dominio][day] = parseInt(value)
+
+        }
+      }
+
+      for (const dom in objDominio) {
+        const element = objDominio[dom];
+        var serie = {
+          name : dom,
+          data: []
+        };
+        
+        for(var i = 0; i < categorias.length; i++){
+          day = categorias[i];
+          var views = 0;
+          if(element.hasOwnProperty(day)) views = element[day];
+          serie.data.push(views);
+        }
+
+        series.push(serie);
+      }
+      
+      /*for (const day in objDay) {
+        const element = objDay[day];
+        
+        var value = 0;
+        for (const dom in objDominio) {
+          if(element[dom]) value = element[dom];
+          objDominio[dom].data.push(value)
+        }
+      }
+
+      
+      for (const dom in objDominio) {
+        
+      }*/
+
+      
+      console.log("objDominio", objDominio);
+      
+      loadGrafico(categorias, series);
+
+    }).catch(function(reason){
+      console.log("REASON", reason);
+    })
+            
+  }
+</script>
+
+<!-- Load the JavaScript API client and Sign-in library. -->
+<script src="https://apis.google.com/js/client:platform.js"></script>
+
+</body>
+</html>
